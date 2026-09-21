@@ -68,17 +68,11 @@ echo ==================================
 echo.
 echo To start the application:
 echo.
-echo 1. Start the backend:
-echo    cd backend ^&^& python main.py
+echo   start.bat
 echo.
-echo 2. Open frontend:
-echo    Open frontend\index.html in your browser
-echo    OR run: python -m http.server 3000 --directory frontend
-echo.
-echo 3. Access the app at:
-echo    Frontend: http://localhost:3000 (if using http.server)
-echo    Backend API: http://localhost:8000
-echo    API Docs: http://localhost:8000/docs
+echo Then open:
+echo   App:      http://localhost:8000
+echo   API docs: http://localhost:8000/docs
 echo.
 echo 📝 Note: The first transcription will download the Whisper model (~74MB for 'base')
 echo.

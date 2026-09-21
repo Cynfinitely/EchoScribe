@@ -1,25 +1,28 @@
 #!/bin/bash
 
-# Start EchoScribe Backend Server
+# Start EchoScribe (API + UI on one port)
 
-echo "🚀 Starting EchoScribe Backend..."
+echo "Starting EchoScribe..."
 echo ""
 
-# Activate virtual environment if it exists
 if [ -d "venv" ]; then
     source venv/bin/activate
-    echo "✅ Virtual environment activated"
+    echo "Virtual environment activated"
 fi
 
-# Load environment variables if .env exists
 if [ -f ".env" ]; then
-    export $(cat .env | grep -v '^#' | xargs)
-    echo "✅ Environment variables loaded"
+    set -a
+    # shellcheck disable=SC1091
+    source .env
+    set +a
+    echo "Environment variables loaded"
 fi
 
-# Start the server
-echo "🌐 Starting server on http://localhost:${PORT:-8000}"
-echo "📚 API documentation: http://localhost:${PORT:-8000}/docs"
+PORT="${PORT:-8000}"
+
+echo "App:            http://localhost:${PORT}"
+echo "API docs:       http://localhost:${PORT}/docs"
+echo "Health check:   http://localhost:${PORT}/health"
 echo ""
 echo "Press Ctrl+C to stop the server"
 echo ""

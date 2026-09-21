@@ -1,16 +1,32 @@
-// Configuration
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL =
+  window.location.protocol === "file:" ? "http://localhost:8000" : "";
 
-// State
+const MAX_FILE_SIZE = 500 * 1024 * 1024;
+const VALID_EXTENSIONS = /\.(mp4|avi|mov|mkv|flv|wmv|webm|m4v|mpg|mpeg)$/i;
+const VALID_TYPES = [
+  "video/mp4",
+  "video/avi",
+  "video/quicktime",
+  "video/x-matroska",
+  "video/x-flv",
+  "video/x-ms-wmv",
+  "video/webm",
+  "video/mpeg",
+];
+
 let selectedFile = null;
 let transcriptionData = null;
+let transcribeController = null;
 
-// DOM Elements
 const uploadArea = document.getElementById("uploadArea");
 const fileInput = document.getElementById("fileInput");
 const transcribeBtn = document.getElementById("transcribeBtn");
 const modelSelect = document.getElementById("modelSelect");
 const languageSelect = document.getElementById("languageSelect");
+const inlineError = document.getElementById("inlineError");
+const statusBanner = document.getElementById("statusBanner");
+const statusBannerText = document.getElementById("statusBannerText");
+const retryConnectionBtn = document.getElementById("retryConnectionBtn");
 
 const uploadSection = document.getElementById("uploadSection");
 const processingSection = document.getElementById("processingSection");
@@ -19,7 +35,6 @@ const errorSection = document.getElementById("errorSection");
 
 const processingStatus = document.getElementById("processingStatus");
 const errorMessage = document.getElementById("errorMessage");
-
 const transcriptionContent = document.getElementById("transcriptionContent");
 const detectedLanguage = document.getElementById("detectedLanguage");
 const videoDuration = document.getElementById("videoDuration");
@@ -32,21 +47,35 @@ const downloadSrtBtn = document.getElementById("downloadSrtBtn");
 const downloadJsonBtn = document.getElementById("downloadJsonBtn");
 const newTranscriptionBtn = document.getElementById("newTranscriptionBtn");
 const retryBtn = document.getElementById("retryBtn");
+const cancelBtn = document.getElementById("cancelBtn");
+const uploadTitle = document.getElementById("uploadTitle");
+const uploadHint = document.getElementById("uploadHint");
 
-// Event Listeners
 uploadArea.addEventListener("click", () => fileInput.click());
+uploadArea.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    fileInput.click();
+  }
+});
 fileInput.addEventListener("change", handleFileSelect);
 transcribeBtn.addEventListener("click", handleTranscribe);
 copyBtn.addEventListener("click", handleCopy);
 downloadTxtBtn.addEventListener("click", () => handleDownload("txt"));
 downloadSrtBtn.addEventListener("click", () => handleDownload("srt"));
 downloadJsonBtn.addEventListener("click", () => handleDownload("json"));
-newTranscriptionBtn.addEventListener("click", resetApp);
-retryBtn.addEventListener("click", resetApp);
+newTranscriptionBtn.addEventListener("click", () => resetApp(true));
+retryBtn.addEventListener("click", () => {
+  showSection("upload");
+  if (selectedFile) {
+    transcribeBtn.disabled = false;
+  }
+});
+cancelBtn.addEventListener("click", cancelTranscription);
+retryConnectionBtn.addEventListener("click", checkBackendConnection);
 
-// Drag and Drop
-uploadArea.addEventListener("dragover", (e) => {
-  e.preventDefault();
+uploadArea.addEventListener("dragover", (event) => {
+  event.preventDefault();
   uploadArea.classList.add("drag-over");
 });
 
@@ -54,133 +83,134 @@ uploadArea.addEventListener("dragleave", () => {
   uploadArea.classList.remove("drag-over");
 });
 
-uploadArea.addEventListener("drop", (e) => {
-  e.preventDefault();
+uploadArea.addEventListener("drop", (event) => {
+  event.preventDefault();
   uploadArea.classList.remove("drag-over");
-  const files = e.dataTransfer.files;
+  const files = event.dataTransfer.files;
   if (files.length > 0) {
     handleFileSelect({ target: { files } });
   }
 });
 
-// File Selection Handler
+function showInlineError(message) {
+  inlineError.textContent = message;
+  inlineError.classList.remove("hidden");
+}
+
+function clearInlineError() {
+  inlineError.textContent = "";
+  inlineError.classList.add("hidden");
+}
+
 function handleFileSelect(event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  // Validate file type
-  const validTypes = [
-    "video/mp4",
-    "video/avi",
-    "video/quicktime",
-    "video/x-matroska",
-    "video/x-flv",
-    "video/x-ms-wmv",
-    "video/webm",
-    "video/mpeg",
-  ];
-
-  if (
-    !validTypes.includes(file.type) &&
-    !file.name.match(/\.(mp4|avi|mov|mkv|flv|wmv|webm|mpg|mpeg)$/i)
-  ) {
-    showError("Invalid file type. Please select a video file.");
+  if (!VALID_TYPES.includes(file.type) && !VALID_EXTENSIONS.test(file.name)) {
+    showInlineError("That file type is not supported. Choose a video file.");
+    fileInput.value = "";
     return;
   }
 
-  // Validate file size (500MB max)
-  const maxSize = 500 * 1024 * 1024;
-  if (file.size > maxSize) {
-    showError("File size exceeds 500MB limit. Please select a smaller file.");
+  if (file.size > MAX_FILE_SIZE) {
+    showInlineError("File is larger than 500MB. Choose a smaller video.");
+    fileInput.value = "";
     return;
   }
 
+  clearInlineError();
   selectedFile = file;
   displaySelectedFile(file);
   transcribeBtn.disabled = false;
 }
 
-// Display Selected File
 function displaySelectedFile(file) {
-  const fileName = file.name;
   const fileSize = (file.size / (1024 * 1024)).toFixed(2);
-
-  // Update upload area
-  const uploadIcon = uploadArea.querySelector(".upload-icon");
-  const h2 = uploadArea.querySelector("h2");
-  const firstP = uploadArea.querySelector("p");
-
-  uploadIcon.textContent = "✅";
-  h2.textContent = "File Selected";
-  firstP.innerHTML = `<strong>${fileName}</strong> (${fileSize} MB)`;
+  uploadTitle.textContent = "File selected";
+  uploadHint.textContent = `${file.name} (${fileSize} MB)`;
 }
 
-// Handle Transcription
-async function handleTranscribe() {
-  if (!selectedFile) return;
-
-  // Show processing section
-  showSection("processing");
-
+function buildFormData() {
   const formData = new FormData();
   formData.append("file", selectedFile);
   formData.append("model", modelSelect.value);
-
-  const language = languageSelect.value;
-  if (language) {
-    formData.append("language", language);
+  if (languageSelect.value) {
+    formData.append("language", languageSelect.value);
   }
+  return formData;
+}
+
+async function handleTranscribe() {
+  if (!selectedFile) return;
+
+  transcribeController = new AbortController();
+  showSection("processing");
+  processingStatus.textContent = "Uploading…";
+  const transcribeLabel = `Transcribing with ${modelSelect.value} model…`;
+  const statusTimer = window.setTimeout(() => {
+    processingStatus.textContent = transcribeLabel;
+  }, 600);
 
   try {
-    processingStatus.textContent = `Transcribing with ${modelSelect.value} model...`;
-
     const response = await fetch(`${API_BASE_URL}/transcribe`, {
       method: "POST",
-      body: formData,
+      body: buildFormData(),
+      signal: transcribeController.signal,
     });
+    window.clearTimeout(statusTimer);
+    processingStatus.textContent = transcribeLabel;
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || "Transcription failed");
+      let detail = "Transcription failed";
+      try {
+        const error = await response.json();
+        detail = error.detail || detail;
+      } catch {
+        detail = `Transcription failed (${response.status})`;
+      }
+      throw new Error(detail);
     }
 
     transcriptionData = await response.json();
     displayResults();
   } catch (error) {
+    if (error.name === "AbortError") {
+      showSection("upload");
+      return;
+    }
     console.error("Transcription error:", error);
     showError(error.message || "Failed to transcribe video. Please try again.");
+  } finally {
+    window.clearTimeout(statusTimer);
+    transcribeController = null;
   }
 }
 
-// Display Results
-function displayResults() {
-  showSection("results");
-
-  // Display transcription text
-  transcriptionContent.textContent = transcriptionData.text;
-
-  // Display metadata
-  detectedLanguage.textContent = transcriptionData.language.toUpperCase();
-  videoDuration.textContent = formatDuration(transcriptionData.duration);
-  modelUsed.textContent = transcriptionData.model_used;
-
-  // Display segments
-  displaySegments(transcriptionData.segments);
+function cancelTranscription() {
+  if (transcribeController) {
+    transcribeController.abort();
+  }
+  showSection("upload");
 }
 
-// Display Segments
+function displayResults() {
+  showSection("results");
+  transcriptionContent.textContent = transcriptionData.text;
+  detectedLanguage.textContent = (transcriptionData.language || "unknown").toUpperCase();
+  videoDuration.textContent = formatDuration(transcriptionData.duration);
+  modelUsed.textContent = transcriptionData.model_used;
+  displaySegments(transcriptionData.segments || []);
+}
+
 function displaySegments(segments) {
   segmentsList.innerHTML = "";
-
-  segments.forEach((segment, index) => {
+  segments.forEach((segment) => {
     const segmentDiv = document.createElement("div");
     segmentDiv.className = "segment-item";
 
     const timeDiv = document.createElement("div");
     timeDiv.className = "segment-time";
-    timeDiv.textContent = `${formatTimestamp(
-      segment.start
-    )} → ${formatTimestamp(segment.end)}`;
+    timeDiv.textContent = `${formatTimestamp(segment.start)} → ${formatTimestamp(segment.end)}`;
 
     const textDiv = document.createElement("div");
     textDiv.className = "segment-text";
@@ -192,134 +222,116 @@ function displaySegments(segments) {
   });
 }
 
-// Copy to Clipboard
 async function handleCopy() {
   try {
     await navigator.clipboard.writeText(transcriptionData.text);
-    copyBtn.textContent = "✅ Copied!";
+    copyBtn.textContent = "Copied";
     setTimeout(() => {
-      copyBtn.textContent = "📋 Copy";
+      copyBtn.textContent = "Copy";
     }, 2000);
   } catch (error) {
-    alert("Failed to copy to clipboard");
+    copyBtn.textContent = "Copy failed";
+    setTimeout(() => {
+      copyBtn.textContent = "Copy";
+    }, 2000);
   }
 }
 
-// Download Handler
-async function handleDownload(format) {
-  let content, filename, mimeType;
+function downloadStem() {
+  const name = selectedFile?.name || "transcription";
+  return name.replace(/\.[^.]+$/, "") || "transcription";
+}
 
-  switch (format) {
-    case "txt":
-      content = transcriptionData.text;
-      filename = `transcription_${Date.now()}.txt`;
-      mimeType = "text/plain";
-      break;
-
-    case "json":
-      content = JSON.stringify(transcriptionData, null, 2);
-      filename = `transcription_${Date.now()}.json`;
-      mimeType = "application/json";
-      break;
-
-    case "srt":
-      // Request SRT format from backend
-      await downloadSRT();
-      return;
-  }
-
-  // Create and trigger download
+function triggerDownload(content, filename, mimeType) {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
 
-// Download SRT (requires separate API call)
-async function downloadSRT() {
-  const formData = new FormData();
-  formData.append("file", selectedFile);
-  formData.append("model", modelSelect.value);
-
-  const language = languageSelect.value;
-  if (language) {
-    formData.append("language", language);
-  }
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/transcribe/srt`, {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to generate SRT");
-    }
-
-    const data = await response.json();
-    const blob = new Blob([data.srt], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `transcription_${Date.now()}.srt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  } catch (error) {
-    console.error("SRT download error:", error);
-    alert("Failed to generate SRT file. Please try again.");
-  }
+function formatSrtTimestamp(seconds) {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  const whole = Math.floor(secs);
+  const millis = Math.round((secs - whole) * 1000);
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(whole).padStart(2, "0")},${String(millis).padStart(3, "0")}`;
 }
 
-// Utility Functions
+function generateSrt(segments) {
+  return segments
+    .map((segment, index) => {
+      const start = formatSrtTimestamp(segment.start);
+      const end = formatSrtTimestamp(segment.end);
+      const text = (segment.text || "").trim();
+      return `${index + 1}\n${start} --> ${end}\n${text}\n`;
+    })
+    .join("\n");
+}
+
+function handleDownload(format) {
+  if (!transcriptionData) return;
+  const stem = downloadStem();
+
+  if (format === "txt") {
+    triggerDownload(transcriptionData.text, `${stem}.txt`, "text/plain");
+    return;
+  }
+
+  if (format === "json") {
+    triggerDownload(
+      JSON.stringify(transcriptionData, null, 2),
+      `${stem}.json`,
+      "application/json"
+    );
+    return;
+  }
+
+  triggerDownload(
+    generateSrt(transcriptionData.segments || []),
+    `${stem}.srt`,
+    "application/x-subrip"
+  );
+}
+
 function showSection(section) {
   uploadSection.classList.add("hidden");
   processingSection.classList.add("hidden");
   resultsSection.classList.add("hidden");
   errorSection.classList.add("hidden");
 
-  switch (section) {
-    case "upload":
-      uploadSection.classList.remove("hidden");
-      break;
-    case "processing":
-      processingSection.classList.remove("hidden");
-      break;
-    case "results":
-      resultsSection.classList.remove("hidden");
-      break;
-    case "error":
-      errorSection.classList.remove("hidden");
-      break;
-  }
+  const sections = {
+    upload: uploadSection,
+    processing: processingSection,
+    results: resultsSection,
+    error: errorSection,
+  };
+  sections[section].classList.remove("hidden");
 }
 
 function showError(message) {
-  errorMessage.textContent = message;
+  errorMessage.textContent = String(message || "").replace(
+    /^Transcription failed:\s*/i,
+    ""
+  );
   showSection("error");
 }
 
-function resetApp() {
-  selectedFile = null;
+function resetApp(clearFile) {
+  if (clearFile) {
+    selectedFile = null;
+    fileInput.value = "";
+    transcribeBtn.disabled = true;
+    uploadTitle.textContent = "Drop your video here";
+    uploadHint.textContent = "or press Enter to browse";
+  }
   transcriptionData = null;
-  fileInput.value = "";
-  transcribeBtn.disabled = true;
-
-  // Reset upload area
-  const uploadIcon = uploadArea.querySelector(".upload-icon");
-  const h2 = uploadArea.querySelector("h2");
-  const firstP = uploadArea.querySelector("p");
-
-  uploadIcon.textContent = "📹";
-  h2.textContent = "Drop your video here";
-  firstP.textContent = "or click to browse";
-
+  clearInlineError();
   showSection("upload");
 }
 
@@ -330,11 +342,11 @@ function formatDuration(seconds) {
 
   if (hours > 0) {
     return `${hours}h ${minutes}m ${secs}s`;
-  } else if (minutes > 0) {
-    return `${minutes}m ${secs}s`;
-  } else {
-    return `${secs}s`;
   }
+  if (minutes > 0) {
+    return `${minutes}m ${secs}s`;
+  }
+  return `${secs}s`;
 }
 
 function formatTimestamp(seconds) {
@@ -346,20 +358,18 @@ function formatTimestamp(seconds) {
     .padStart(2, "0")}.${ms.toString().padStart(3, "0")}`;
 }
 
-// Check backend connection on load
 async function checkBackendConnection() {
   try {
     const response = await fetch(`${API_BASE_URL}/health`);
     if (!response.ok) {
-      console.warn("Backend connection check failed");
+      throw new Error("unhealthy");
     }
+    statusBanner.classList.add("hidden");
   } catch (error) {
-    console.warn(
-      "Could not connect to backend. Make sure the server is running at",
-      API_BASE_URL
-    );
+    statusBannerText.textContent =
+      "Cannot reach the transcription server. Start EchoScribe and try again.";
+    statusBanner.classList.remove("hidden");
   }
 }
 
-// Initialize
 checkBackendConnection();

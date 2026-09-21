@@ -141,7 +141,7 @@ EchoScribe/
 └─ 📚 DOCUMENTATION
    ├─ README.md       → Full docs
    ├─ QUICKSTART.md   → Fast setup
-   └─ IMPLEMENTATION.md → Technical details
+   └─ DEPLOY_FREE.md  → Optional Hugging Face hosting
 ```
 
 ## Quick Commands
@@ -154,7 +154,7 @@ setup.bat               # Windows
 # START
 ./start.sh              # Linux/macOS
 start.bat               # Windows
-# Then open frontend/index.html
+# Open http://localhost:8000
 
 # OR WITH DOCKER
 docker-compose up --build
@@ -267,7 +267,7 @@ SIZE LIMIT: 500MB (configurable)
 
 2️⃣  START
    ./start.sh
-   Open frontend/index.html
+   Open http://localhost:8000
 
 3️⃣  USE
    Drop video → Transcribe → Download!

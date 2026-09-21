@@ -20,18 +20,22 @@ def validate_video_file(filename: str, file_size: int) -> tuple[bool, str]:
     
     Args:
         filename: Name of the uploaded file
-        file_size: Size of the file in bytes
+        file_size: Size of the file in bytes. Pass 0 to skip the size check
+            (useful while streaming the upload).
     
     Returns:
         Tuple of (is_valid, error_message)
     """
+    if not filename:
+        return False, "A video file is required"
+
     # Check file extension
     file_ext = Path(filename).suffix.lower()
     if file_ext not in SUPPORTED_FORMATS:
-        return False, f"Unsupported file format. Supported formats: {', '.join(SUPPORTED_FORMATS)}"
+        return False, f"Unsupported file format. Supported formats: {', '.join(sorted(SUPPORTED_FORMATS))}"
     
-    # Check file size
-    if file_size > MAX_FILE_SIZE:
+    # Check file size (0 skips this check while the upload is still streaming)
+    if file_size and file_size > MAX_FILE_SIZE:
         max_size_mb = MAX_FILE_SIZE / (1024 * 1024)
         return False, f"File size exceeds maximum limit of {max_size_mb:.0f}MB"
     

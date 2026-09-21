@@ -14,6 +14,11 @@ _model: Optional[whisper.Whisper] = None
 _model_name: str = "base"
 
 
+def model_is_loaded() -> bool:
+    """Return whether a Whisper model is currently cached in memory."""
+    return _model is not None
+
+
 def get_model(model_name: str = "base") -> whisper.Whisper:
     """
     Load and cache the Whisper model.
@@ -58,8 +63,10 @@ def extract_audio(video_path: Path, audio_path: Path) -> None:
         logger.info(f"Audio extracted successfully to {audio_path}")
     except ffmpeg.Error as e:
         error_message = e.stderr.decode() if e.stderr else str(e)
-        logger.error(f"FFmpeg error during audio extraction: {error_message}")
-        raise Exception(f"Failed to extract audio from video: {error_message}")
+        logger.error("FFmpeg error during audio extraction: %s", error_message)
+        raise Exception(
+            "Could not extract audio from this file. Check that it is a valid video."
+        )
 
 
 def transcribe_video(video_path: Path, model_name: str = "base", language: Optional[str] = None) -> dict:
@@ -122,5 +129,5 @@ def transcribe_video(video_path: Path, model_name: str = "base", language: Optio
             }
     
     except Exception as e:
-        logger.error(f"Transcription failed: {e}")
-        raise Exception(f"Failed to transcribe video: {str(e)}")
+        logger.error("Transcription failed: %s", e)
+        raise

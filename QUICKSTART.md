@@ -54,23 +54,14 @@ start.bat
 
 ### Method 2: Manual Start
 
-**Terminal 1 - Backend:**
-
 ```bash
 cd backend
 python main.py
 ```
 
-**Terminal 2 - Frontend (optional):**
+Then open **http://localhost:8000**
 
-```bash
-python -m http.server 3000 --directory frontend
-```
-
-Then:
-
-- Open `frontend/index.html` in your browser
-- OR visit `http://localhost:3000` if using http.server
+The UI and API are served from the same process.
 
 ## 3️⃣ Using EchoScribe
 
@@ -108,17 +99,15 @@ Then:
 docker-compose up --build
 
 # Access
-# - Backend: http://localhost:8000
-# - Frontend: Open frontend/index.html
-# - API Docs: http://localhost:8000/docs
+# - App: http://localhost:8000
+# - API docs: http://localhost:8000/docs
 ```
 
 ## 📍 Access Points
 
-- **Frontend**: `frontend/index.html` or `http://localhost:3000`
-- **Backend API**: `http://localhost:8000`
-- **API Documentation**: `http://localhost:8000/docs`
-- **Health Check**: `http://localhost:8000/health`
+- **App**: `http://localhost:8000`
+- **API documentation**: `http://localhost:8000/docs`
+- **Health check**: `http://localhost:8000/health`
 
 ## ⚡ Common Commands
 
@@ -149,14 +138,14 @@ ffmpeg -version
 pip install -r backend/requirements.txt
 ```
 
-### Can't access frontend
+### Can't access the app
 
 ```bash
-# Make sure you're opening the right file
-open frontend/index.html
+# Verify the server is running
+curl http://localhost:8000/health
 
-# Or use a web server
-python -m http.server 3000 --directory frontend
+# Then open the UI
+open http://localhost:8000
 ```
 
 ### Transcription fails
@@ -176,4 +165,4 @@ python -m http.server 3000 --directory frontend
 
 ## 🔗 More Information
 
-See [README.md](README.md) for complete documentation.
+See [README.md](README.md) for complete documentation. For a free public demo, see [DEPLOY_FREE.md](DEPLOY_FREE.md).
