@@ -2,196 +2,228 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0" />
-    <title>EchoScribe - Video Transcription</title>
-    <link
-      rel="stylesheet"
-      href="styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EchoScribe — Video transcription</title>
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="container">
-      <header>
-        <h1>🎬 EchoScribe</h1>
-        <p class="tagline">Transform your videos into text using AI</p>
-      </header>
-
-      <main>
-        <!-- Upload Section -->
-        <section
-          class="upload-section"
-          id="uploadSection">
-          <div
-            class="upload-area"
-            id="uploadArea">
-            <div class="upload-icon">📹</div>
-            <h2>Drop your video here</h2>
-            <p>or click to browse</p>
-            <p class="file-info">
-              Supported formats: MP4, AVI, MOV, MKV, WebM (max 500MB)
-            </p>
-            <input
-              type="file"
-              id="fileInput"
-              accept="video/*"
-              hidden />
-          </div>
-
-          <div class="options">
-            <div class="option-group">
-              <label for="modelSelect">Model Quality:</label>
-              <select id="modelSelect">
-                <option value="tiny">Tiny - Fastest (less accurate)</option>
-                <option
-                  value="base"
-                  selected>
-                  Base - Balanced (recommended)
-                </option>
-                <option value="small">Small - Better accuracy</option>
-                <option value="medium">Medium - High accuracy</option>
-                <option value="large">Large - Best accuracy (slowest)</option>
-              </select>
-            </div>
-
-            <div class="option-group">
-              <label for="languageSelect">Language (optional):</label>
-              <select id="languageSelect">
-                <option value="">Auto-detect</option>
-                <option value="en">English</option>
-                <option value="es">Spanish</option>
-                <option value="fr">French</option>
-                <option value="de">German</option>
-                <option value="it">Italian</option>
-                <option value="pt">Portuguese</option>
-                <option value="ru">Russian</option>
-                <option value="zh">Chinese</option>
-                <option value="ja">Japanese</option>
-                <option value="ko">Korean</option>
-                <option value="ar">Arabic</option>
-                <option value="hi">Hindi</option>
-                <option value="tr">Turkish</option>
-              </select>
-            </div>
-          </div>
-
-          <button
-            class="btn-primary"
-            id="transcribeBtn"
-            disabled>
-            Transcribe Video
-          </button>
-        </section>
-
-        <!-- Processing Section -->
-        <section
-          class="processing-section hidden"
-          id="processingSection">
-          <div class="spinner"></div>
-          <h2>Processing your video...</h2>
-          <p id="processingStatus">Extracting audio and transcribing...</p>
-          <p class="processing-note">
-            This may take a few minutes depending on video length and model
-            selected
-          </p>
-        </section>
-
-        <!-- Results Section -->
-        <section
-          class="results-section hidden"
-          id="resultsSection">
-          <div class="results-header">
-            <h2>Transcription Complete!</h2>
-            <button
-              class="btn-secondary"
-              id="newTranscriptionBtn">
-              New Transcription
-            </button>
-          </div>
-
-          <div class="metadata">
-            <span class="metadata-item">
-              <strong>Language:</strong> <span id="detectedLanguage">-</span>
-            </span>
-            <span class="metadata-item">
-              <strong>Duration:</strong> <span id="videoDuration">-</span>
-            </span>
-            <span class="metadata-item">
-              <strong>Model:</strong> <span id="modelUsed">-</span>
-            </span>
-          </div>
-
-          <div class="transcription-box">
-            <div class="transcription-header">
-              <h3>Transcription</h3>
-              <button
-                class="btn-icon"
-                id="copyBtn"
-                title="Copy to clipboard">
-                📋 Copy
-              </button>
-            </div>
-            <div
-              class="transcription-content"
-              id="transcriptionContent"></div>
-          </div>
-
-          <div class="download-options">
-            <h3>Download Options</h3>
-            <div class="download-buttons">
-              <button
-                class="btn-download"
-                id="downloadTxtBtn">
-                📄 Download as TXT
-              </button>
-              <button
-                class="btn-download"
-                id="downloadSrtBtn">
-                🎬 Download as SRT (Subtitles)
-              </button>
-              <button
-                class="btn-download"
-                id="downloadJsonBtn">
-                📊 Download as JSON
-              </button>
-            </div>
-          </div>
-
-          <!-- Segments Section (optional, collapsible) -->
-          <details class="segments-details">
-            <summary>View Timestamped Segments</summary>
-            <div
-              class="segments-list"
-              id="segmentsList"></div>
-          </details>
-        </section>
-
-        <!-- Error Section -->
-        <section
-          class="error-section hidden"
-          id="errorSection">
-          <div class="error-icon">⚠️</div>
-          <h2>Oops! Something went wrong</h2>
-          <p
-            class="error-message"
-            id="errorMessage">
-            An error occurred during transcription.
-          </p>
-          <button
-            class="btn-primary"
-            id="retryBtn">
-            Try Again
-          </button>
-        </section>
-      </main>
-
-      <footer>
-        <p>Powered by OpenAI Whisper • No data is stored permanently</p>
-        <p class="privacy-note">
-          🔒 Your privacy matters: Videos are processed temporarily and deleted
-          immediately after transcription
+    <div class="page">
+      <div
+        id="statusBanner"
+        class="status-banner hidden"
+        role="status"
+        aria-live="polite">
+        <p id="statusBannerText">
+          Cannot reach the transcription server. Start EchoScribe and try again.
         </p>
-      </footer>
+        <button type="button" class="btn-text" id="retryConnectionBtn">
+          Retry connection
+        </button>
+      </div>
+
+      <div class="container">
+        <header>
+          <p class="brand">EchoScribe</p>
+          <h1>Turn video into text</h1>
+          <p class="tagline">
+            Local Whisper transcription. Files are processed temporarily and
+            deleted afterward.
+          </p>
+        </header>
+
+        <main>
+          <section class="upload-section" id="uploadSection">
+            <div
+              class="upload-area"
+              id="uploadArea"
+              role="button"
+              tabindex="0"
+              aria-controls="fileInput"
+              aria-label="Choose a video file to transcribe">
+              <div class="upload-icon" aria-hidden="true">
+                <svg viewBox="0 0 48 48" fill="none">
+                  <rect
+                    x="8"
+                    y="12"
+                    width="32"
+                    height="24"
+                    rx="4"
+                    stroke="currentColor"
+                    stroke-width="2" />
+                  <path
+                    d="M16 28l6-7 5 5 3-3 6 7"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round" />
+                  <circle cx="18" cy="20" r="2.5" fill="currentColor" />
+                </svg>
+              </div>
+              <h2 id="uploadTitle">Drop your video here</h2>
+              <p id="uploadHint">or press Enter to browse</p>
+              <p class="file-info">
+                MP4, AVI, MOV, MKV, WebM and more · max 500MB
+              </p>
+              <input
+                type="file"
+                id="fileInput"
+                class="visually-hidden"
+                accept="video/*"
+                aria-label="Video file" />
+            </div>
+
+            <p
+              class="inline-error hidden"
+              id="inlineError"
+              role="alert"></p>
+
+            <div class="options">
+              <div class="option-group">
+                <label for="modelSelect">Model quality</label>
+                <select id="modelSelect">
+                  <option value="tiny">Tiny — fastest, less accurate</option>
+                  <option value="base" selected>
+                    Base — balanced, recommended
+                  </option>
+                  <option value="small">Small — better accuracy</option>
+                  <option value="medium">Medium — high accuracy</option>
+                  <option value="large">Large — best accuracy, slowest</option>
+                </select>
+              </div>
+
+              <div class="option-group">
+                <label for="languageSelect">Language</label>
+                <select id="languageSelect">
+                  <option value="">Auto-detect</option>
+                  <option value="en">English</option>
+                  <option value="es">Spanish</option>
+                  <option value="fr">French</option>
+                  <option value="de">German</option>
+                  <option value="it">Italian</option>
+                  <option value="pt">Portuguese</option>
+                  <option value="ru">Russian</option>
+                  <option value="zh">Chinese</option>
+                  <option value="ja">Japanese</option>
+                  <option value="ko">Korean</option>
+                  <option value="ar">Arabic</option>
+                  <option value="hi">Hindi</option>
+                  <option value="tr">Turkish</option>
+                </select>
+              </div>
+            </div>
+
+            <button class="btn-primary" id="transcribeBtn" disabled>
+              Transcribe video
+            </button>
+          </section>
+
+          <section
+            class="processing-section hidden"
+            id="processingSection"
+            aria-live="polite"
+            aria-busy="true">
+            <div class="spinner" aria-hidden="true"></div>
+            <h2>Processing your video</h2>
+            <p id="processingStatus">Uploading…</p>
+            <p class="processing-note">
+              Time depends on video length and model. You can cancel and return
+              to the upload screen; a job already running on the server may
+              still finish.
+            </p>
+            <button type="button" class="btn-secondary" id="cancelBtn">
+              Cancel
+            </button>
+          </section>
+
+          <section class="results-section hidden" id="resultsSection">
+            <div class="results-header">
+              <h2>Transcription complete</h2>
+              <button class="btn-secondary" id="newTranscriptionBtn">
+                New transcription
+              </button>
+            </div>
+
+            <div class="metadata">
+              <span class="metadata-item">
+                <strong>Language</strong>
+                <span id="detectedLanguage">-</span>
+              </span>
+              <span class="metadata-item">
+                <strong>Duration</strong>
+                <span id="videoDuration">-</span>
+              </span>
+              <span class="metadata-item">
+                <strong>Model</strong>
+                <span id="modelUsed">-</span>
+              </span>
+            </div>
+
+            <div class="transcription-box">
+              <div class="transcription-header">
+                <h3>Transcription</h3>
+                <button class="btn-icon" id="copyBtn" type="button">Copy</button>
+              </div>
+              <div
+                class="transcription-content"
+                id="transcriptionContent"></div>
+            </div>
+
+            <div class="download-options">
+              <h3>Download</h3>
+              <div class="download-buttons">
+                <button class="btn-download" id="downloadTxtBtn" type="button">
+                  Download TXT
+                </button>
+                <button class="btn-download" id="downloadSrtBtn" type="button">
+                  Download SRT
+                </button>
+                <button class="btn-download" id="downloadJsonBtn" type="button">
+                  Download JSON
+                </button>
+              </div>
+            </div>
+
+            <details class="segments-details">
+              <summary>Timestamped segments</summary>
+              <div class="segments-list" id="segmentsList"></div>
+            </details>
+          </section>
+
+          <section class="error-section hidden" id="errorSection">
+            <div class="error-icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none">
+                <circle
+                  cx="24"
+                  cy="24"
+                  r="16"
+                  stroke="currentColor"
+                  stroke-width="2" />
+                <path
+                  d="M24 16v12"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round" />
+                <circle cx="24" cy="33" r="1.5" fill="currentColor" />
+              </svg>
+            </div>
+            <h2>Transcription failed</h2>
+            <p class="error-message" id="errorMessage" role="alert">
+              An error occurred during transcription.
+            </p>
+            <button class="btn-primary" id="retryBtn" type="button">
+              Try again
+            </button>
+          </section>
+        </main>
+
+        <footer>
+          <p>Powered by OpenAI Whisper. No data is stored permanently.</p>
+          <p class="privacy-note">
+            Videos are processed in a temporary file and deleted after
+            transcription.
+          </p>
+        </footer>
+      </div>
     </div>
 
     <script src="app.js"></script>

@@ -11,9 +11,9 @@ EchoScribe is a web-based video transcription tool powered by OpenAI's open-sour
 - 🌍 **Multi-language**: Supports 99+ languages with automatic detection
 - ⚡ **Multiple Model Options**: Choose speed vs accuracy based on your needs
 - 📝 **Multiple Export Formats**: Download as TXT, SRT (subtitles), or JSON
-- 🔒 **Privacy-Focused**: No permanent storage—files are deleted immediately after processing
-- 🎨 **Modern UI**: Beautiful, responsive interface with drag-and-drop
-- 🐳 **Docker Ready**: Easy deployment with Docker support
+- **Privacy-Focused**: No permanent storage—files are deleted immediately after processing
+- **Modern UI**: Drag-and-drop upload, progress, and TXT/SRT/JSON export
+- **Docker Ready**: Easy deployment with Docker support
 
 ## 📋 Requirements
 
@@ -59,25 +59,16 @@ EchoScribe is a web-based video transcription tool powered by OpenAI's open-sour
    pip install -r backend/requirements.txt
    ```
 
-3. **Run the Backend**
+3. **Run the app**
 
    ```bash
-   cd backend
-   python main.py
+   ./start.sh
+   # Windows: start.bat
    ```
 
-   The API will be available at `http://localhost:8000`
+   Open **http://localhost:8000** — the UI and API are served together.
 
-4. **Open the Frontend**
-
-   Simply open `frontend/index.html` in your browser, or serve it with a simple HTTP server:
-
-   ```bash
-   # Python 3
-   python -m http.server 3000 --directory frontend
-   ```
-
-   Then visit `http://localhost:3000`
+   API docs: `http://localhost:8000/docs`
 
 ### Option 2: Docker
 
@@ -87,10 +78,9 @@ EchoScribe is a web-based video transcription tool powered by OpenAI's open-sour
    docker-compose up --build
    ```
 
-2. **Access the Application**
-   - Backend API: `http://localhost:8000`
-   - Frontend: Open `frontend/index.html` in your browser
-   - API Docs: `http://localhost:8000/docs`
+2. **Access the application**
+   - App: `http://localhost:8000`
+   - API docs: `http://localhost:8000/docs`
 
 ## 🎯 Usage
 
@@ -227,7 +217,7 @@ EchoScribe/
 1. **Use Environment Variables** for configuration
 2. **Set up Nginx** as reverse proxy (see `nginx.conf`)
 3. **Enable HTTPS** with Let's Encrypt
-4. **Set CORS origins** to specific domains in `backend/main.py`
+4. **Set CORS origins** with the `CORS_ORIGINS` environment variable
 5. **Add rate limiting** for API endpoints
 6. **Monitor resource usage** (RAM, CPU, disk space)
 7. **Consider GPU acceleration** for faster processing
@@ -275,6 +265,8 @@ For issues and questions:
 1. Check the [Troubleshooting](#-troubleshooting) section
 2. Review [Whisper documentation](https://github.com/openai/whisper)
 3. Open an issue in this repository
+
+Optional public hosting: see [DEPLOY_FREE.md](DEPLOY_FREE.md) for Hugging Face Spaces (Gradio).
 
 ---
 
