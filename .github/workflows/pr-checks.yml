@@ -87,7 +87,8 @@ jobs:
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
   python-audit:
-    # Reports known vulnerabilities in backend/requirements.txt as a warning and
+    # Reports known vulnerabilities in the app's and the Hugging Face Space's
+    # requirements as a warning and
     # in the job summary. Not blocking yet: the pinned FastAPI/Starlette and
     # Whisper's torch have open advisories whose fixes need Python 3.10+.
     # TODO(2026-12-31): fix them, then make this job fail on findings.
@@ -104,10 +105,13 @@ jobs:
       # so it (and its torch chain) is left out of this audit.
       - name: Audit Python dependencies
         run: |
-          grep -v '^openai-whisper' backend/requirements.txt > /tmp/requirements-audit.txt
-          if pip-audit -r /tmp/requirements-audit.txt -f markdown -o /tmp/audit.md; then
-            echo "No known vulnerabilities (openai-whisper/torch not audited)." >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "::warning title=Python dependency audit::Known vulnerabilities in backend/requirements.txt. See the job summary."
-            cat /tmp/audit.md >> "$GITHUB_STEP_SUMMARY"
-          fi
+          for req in backend/requirements.txt deploy/huggingface/requirements.txt; do
+            grep -v '^openai-whisper' "$req" > /tmp/requirements-audit.txt
+            echo "### $req" >> "$GITHUB_STEP_SUMMARY"
+            if pip-audit -r /tmp/requirements-audit.txt -f markdown -o /tmp/audit.md; then
+              echo "No known vulnerabilities (openai-whisper/torch not audited)." >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "::warning title=Python dependency audit::Known vulnerabilities in $req. See the job summary."
+              cat /tmp/audit.md >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done

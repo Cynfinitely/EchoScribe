@@ -165,4 +165,4 @@ open http://localhost:8000
 
 ## 🔗 More Information
 
-See [README.md](README.md) for complete documentation. For a free public demo, see [DEPLOY_FREE.md](DEPLOY_FREE.md).
+See [README.md](README.md) for complete documentation. For a free public demo, see [deploy/huggingface/DEPLOY_FREE.md](deploy/huggingface/DEPLOY_FREE.md).
