@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     container_name: echoscribe
     ports:
-      - "8000:8000"
+      - '8000:8000'
     environment:
       - WHISPER_MODEL=base
       - PORT=8000
@@ -17,9 +17,9 @@ services:
     healthcheck:
       test:
         [
-          "CMD",
-          "python",
-          "-c",
+          'CMD',
+          'python',
+          '-c',
           "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')",
         ]
       interval: 30s
