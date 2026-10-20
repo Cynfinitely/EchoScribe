@@ -20,8 +20,9 @@ Shared project knowledge for AI assistants. Commit this file.
 
 - `package.json` is dev tooling only (hooks, Prettier, commitlint); the app is Python. Node version: `.nvmrc`. Hooks bootstrap nvm through `scripts/ensure-node.sh` so GUI git clients work.
 - Hooks: Husky (`.husky/`). Pre-commit = secret scan (gitleaks) + lint-staged (Prettier on JS/CSS/HTML/JSON/MD/YAML, ruff on Python). Commit-msg = AI attribution check + commitlint. Pre-push = `scripts/pre-push-check.sh`.
-- Python lint: ruff (`npm run lint` → `scripts/lint-py.sh`, config `ruff.toml`, pinned in `requirements-dev.txt`).
-- Dependency audit: `npm run audit:ci` (`scripts/npm-audit-ci.sh`), never bare `npm audit`. Waivers: `scripts/npm-audit-allowlist.json`.
+- Python lint: ruff on tracked files (`npm run lint` → `scripts/lint-py.sh`, config `ruff.toml`, pinned in `requirements-dev.txt`).
+- Python dependency audit: `python-audit` job in `pr-checks.yml` (pip-audit, warning only until the FastAPI/torch upgrade lands; openai-whisper is not audited).
+- Dependency audit (Node dev tooling): `npm run audit:ci` (`scripts/npm-audit-ci.sh`), never bare `npm audit`. Waivers: `scripts/npm-audit-allowlist.json`.
 - CI: `.github/workflows/pr-checks.yml` runs the same checks as the hooks.
 
 ## Learned Workspace Facts
@@ -29,6 +30,6 @@ Shared project knowledge for AI assistants. Commit this file.
 - Stack: Python FastAPI backend in `backend/` (`main.py` routes, `transcriber.py` Whisper wrapper, `utils.py` file/format helpers) and a static vanilla JS frontend in `frontend/` that FastAPI serves, so the whole app is one process at `http://localhost:8000`.
 - Runtime needs FFmpeg on PATH and OpenAI Whisper (`openai-whisper`); models download to `~/.cache/whisper` on first use. Model is chosen by `WHISPER_MODEL` (default `base`).
 - Run locally: `./setup.sh` once, then `./start.sh` (Windows: `setup.bat` / `start.bat`). Docker: `docker-compose up` (Dockerfile uses python:3.10-slim).
-- Target Python is 3.10 (Dockerfile, README, `ruff.toml`). The local `venv/` may be older (3.9); don't use 3.10+-only syntax until it is rebuilt. The venv was created at an older repo path, so `venv/bin/pip` is broken; use `venv/bin/python3 -m pip`.
+- Docker and README target Python 3.10, but the local `venv/` is 3.9, so code must stay 3.9-compatible (`ruff.toml` targets py39). FastAPI evaluates route annotations at runtime, so `X | None` in route params breaks on 3.9: use `Optional[X]`. The venv was created at an older repo path, so `venv/bin/pip` is broken; use `venv/bin/python3 -m pip`.
 - `nginx.conf` is optional, for production deploys only.
 - No automated tests yet, so there is no `test` script. Add one (pytest) together with the first tests.

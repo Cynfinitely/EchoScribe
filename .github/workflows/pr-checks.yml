@@ -85,3 +85,29 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  python-audit:
+    # Reports known vulnerabilities in backend/requirements.txt as a warning and
+    # in the job summary. Not blocking yet: the pinned FastAPI/Starlette and
+    # Whisper's torch have open advisories whose fixes need Python 3.10+.
+    # TODO(2026-12-31): fix them, then make this job fail on findings.
+    if: github.event.action != 'edited'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - run: pip install pip-audit
+      # openai-whisper's sdist can't be resolved in pip-audit's isolated build,
+      # so it (and its torch chain) is left out of this audit.
+      - name: Audit Python dependencies
+        run: |
+          grep -v '^openai-whisper' backend/requirements.txt > /tmp/requirements-audit.txt
+          if pip-audit -r /tmp/requirements-audit.txt -f markdown -o /tmp/audit.md; then
+            echo "No known vulnerabilities (openai-whisper/torch not audited)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning title=Python dependency audit::Known vulnerabilities in backend/requirements.txt. See the job summary."
+            cat /tmp/audit.md >> "$GITHUB_STEP_SUMMARY"
+          fi

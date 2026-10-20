@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Python lint gate: ruff check on the given files, or the whole repo.
+# Python lint gate: ruff check on the given files, or all tracked Python files.
 # Hooks and GUI git clients run without the venv activated, so prefer the
 # repo venv's ruff, then one on PATH. Config: ruff.toml.
 set -eu
@@ -15,8 +15,13 @@ else
   exit 1
 fi
 
+# No args: every tracked Python file, so local WIP that isn't committed can't
+# fail a push (CI only sees tracked files either way).
 if [ "$#" -eq 0 ]; then
-  set -- "$ROOT_DIR"
+  cd "$ROOT_DIR"
+  # shellcheck disable=SC2046
+  set -- $(git ls-files '*.py')
+  [ "$#" -eq 0 ] && exit 0
 fi
 
 exec "$RUFF" check --config "$ROOT_DIR/ruff.toml" "$@"
