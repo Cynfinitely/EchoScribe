@@ -53,3 +53,14 @@ logs/
 
 # Docker
 docker-compose.override.yml
+
+# Node tooling (dev-standards)
+node_modules/
+coverage/
+test-results/
+.env.*
+!.env.example
+
+# Per-user editor and agent settings
+.cursor/
+.claude/settings.local.json
