@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from transcriber import model_is_loaded, transcribe_video
+from transcriber import AudioExtractionError, model_is_loaded, transcribe_video
 from utils import (
     MAX_FILE_SIZE,
     generate_srt,
@@ -160,9 +160,13 @@ async def transcribe(
         return JSONResponse(content=result)
     except HTTPException:
         raise
+    except AudioExtractionError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
     except Exception as e:
-        logger.error("Transcription error: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
+        logger.exception("Transcription error")
+        raise HTTPException(
+            status_code=500, detail="Transcription failed. Please try again."
+        ) from e
     finally:
         await file.close()
 
@@ -187,9 +191,13 @@ async def transcribe_to_srt(
         )
     except HTTPException:
         raise
+    except AudioExtractionError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
     except Exception as e:
-        logger.error("SRT transcription error: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
+        logger.exception("SRT transcription error")
+        raise HTTPException(
+            status_code=500, detail="Transcription failed. Please try again."
+        ) from e
     finally:
         await file.close()
 
@@ -207,6 +215,6 @@ else:
 if __name__ == "__main__":
     import uvicorn
 
-    port = int(os.getenv("PORT", 8000))
+    port = int(os.getenv("PORT", "8000"))
     host = os.getenv("HOST", "0.0.0.0")
     uvicorn.run(app, host=host, port=port)

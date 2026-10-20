@@ -1,9 +1,9 @@
+import logging
 import os
 import tempfile
-import logging
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Generator
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +67,7 @@ def temporary_file(suffix: str = "") -> Generator[Path, None, None]:
             try:
                 temp_file.unlink()
                 logger.info(f"Deleted temporary file: {temp_file}")
-            except Exception as e:
+            except OSError as e:
                 logger.error(f"Failed to delete temporary file {temp_file}: {e}")
 
 
@@ -91,7 +91,7 @@ def temporary_directory() -> Generator[Path, None, None]:
                 import shutil
                 shutil.rmtree(temp_dir)
                 logger.info(f"Deleted temporary directory: {temp_dir}")
-            except Exception as e:
+            except OSError as e:
                 logger.error(f"Failed to delete temporary directory {temp_dir}: {e}")
 
 
