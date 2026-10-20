@@ -266,7 +266,7 @@ For issues and questions:
 2. Review [Whisper documentation](https://github.com/openai/whisper)
 3. Open an issue in this repository
 
-Optional public hosting: see [DEPLOY_FREE.md](DEPLOY_FREE.md) for Hugging Face Spaces (Gradio).
+Optional public hosting: see [deploy/huggingface/DEPLOY_FREE.md](deploy/huggingface/DEPLOY_FREE.md) for Hugging Face Spaces (Gradio).
 
 ---
 

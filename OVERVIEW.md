@@ -141,7 +141,7 @@ EchoScribe/
 └─ 📚 DOCUMENTATION
    ├─ README.md       → Full docs
    ├─ QUICKSTART.md   → Fast setup
-   └─ DEPLOY_FREE.md  → Optional Hugging Face hosting
+   └─ deploy/huggingface/DEPLOY_FREE.md → Optional Hugging Face hosting (Gradio app)
 ```
 
 ## Quick Commands

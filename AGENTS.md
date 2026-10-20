@@ -32,4 +32,5 @@ Shared project knowledge for AI assistants. Commit this file.
 - Run locally: `./setup.sh` once, then `./start.sh` (Windows: `setup.bat` / `start.bat`). Docker: `docker-compose up` (Dockerfile uses python:3.10-slim).
 - Docker and README target Python 3.10, but the local `venv/` is 3.9, so code must stay 3.9-compatible (`ruff.toml` targets py39). FastAPI evaluates route annotations at runtime, so `X | None` in route params breaks on 3.9: use `Optional[X]`. The venv was created at an older repo path, so `venv/bin/pip` is broken; use `venv/bin/python3 -m pip`.
 - `nginx.conf` is optional, for production deploys only.
+- `deploy/huggingface/` is a separate Gradio version of the app for Hugging Face Spaces (`app.py`, its own pinned `requirements.txt`, guide `DEPLOY_FREE.md`). It does not import `backend/`, so changes to transcription, SRT output or privacy behaviour must be made in both places. Its `gradio` pin must match `sdk_version` in the Space's README.
 - No automated tests yet, so there is no `test` script. Add one (pytest) together with the first tests.
