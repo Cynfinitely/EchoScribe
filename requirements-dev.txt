@@ -1,0 +1,2 @@
+# Dev tooling (lint). Install: venv/bin/python3 -m pip install -r requirements-dev.txt
+ruff==0.17.1

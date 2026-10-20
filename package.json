@@ -1,0 +1,34 @@
+{
+  "name": "echoscribe-tooling",
+  "private": true,
+  "description": "Dev tooling only (git hooks, Prettier, commitlint). The app is Python; see AGENTS.md.",
+  "type": "module",
+  "scripts": {
+    "prepare": "sh -c '[ -n \"$CI\" ] || [ ! -d .git ] || husky'",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "sh scripts/lint-py.sh",
+    "audit:ci": "sh scripts/npm-audit-ci.sh",
+    "check:ai-attribution": "node scripts/check-ai-attribution.mjs",
+    "test:ai-attribution": "node --test scripts/check-ai-attribution.test.mjs",
+    "test:commitlint": "node --test scripts/commitlint-config.test.mjs"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs}": [
+      "prettier --write --ignore-unknown"
+    ],
+    "*.{json,css,html,md,yml,yaml}": [
+      "prettier --write --ignore-unknown"
+    ],
+    "*.py": [
+      "sh scripts/lint-py.sh"
+    ]
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.9.10"
+  }
+}

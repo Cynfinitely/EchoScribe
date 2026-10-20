@@ -1,13 +1,17 @@
-import os
 import logging
 from pathlib import Path
 from typing import Optional
-import whisper
+
 import ffmpeg
+import whisper
 
 from utils import temporary_file
 
 logger = logging.getLogger(__name__)
+
+
+class AudioExtractionError(Exception):
+    """The upload could not be decoded into audio; the message is safe to show users."""
 
 # Global variable to store loaded model
 _model: Optional[whisper.Whisper] = None
@@ -64,9 +68,9 @@ def extract_audio(video_path: Path, audio_path: Path) -> None:
     except ffmpeg.Error as e:
         error_message = e.stderr.decode() if e.stderr else str(e)
         logger.error("FFmpeg error during audio extraction: %s", error_message)
-        raise Exception(
+        raise AudioExtractionError(
             "Could not extract audio from this file. Check that it is a valid video."
-        )
+        ) from e
 
 
 def transcribe_video(video_path: Path, model_name: str = "base", language: Optional[str] = None) -> dict:

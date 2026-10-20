@@ -1,0 +1,16 @@
+# Python lint config. Gate: scripts/lint-py.sh (npm run lint, pre-commit, CI).
+# py39: the local venv still runs 3.9 and FastAPI evaluates annotations at
+# runtime, so `X | None` in route params would break it. Raise to py310 once
+# every environment is on 3.10+ (Docker already is).
+target-version = "py39"
+src = ["backend"]
+extend-exclude = ["venv"]
+
+[lint]
+# FA100 would add `from __future__ import annotations`; FastAPI still resolves
+# those strings at runtime, so `X | None` fails on 3.9 all the same.
+extend-ignore = ["FA100"]
+
+[lint.flake8-bugbear]
+# FastAPI declares request params as File()/Form()/Depends() defaults by design.
+extend-immutable-calls = ["fastapi.File", "fastapi.Form", "fastapi.Depends", "fastapi.Query"]
